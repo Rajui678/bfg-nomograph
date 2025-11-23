@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BFG Steam Generation Nomograph</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/recharts@2.5.0/dist/Recharts.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState } = React;
+        const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } = Recharts;
+
+        const BFGNomograph = () => {
+          const [selectedFlow, setSelectedFlow] = useState(24000);
+          const [selectedCV, setSelectedCV] = useState(740);
+          const [numBurners, setNumBurners] = useState(4);
+          
+          const BOILER_EFFICIENCY = 0.90;
+          const STEAM_ENTHALPY = 660;
+          
+          const calculateSteamRate = (flowRate, cv, burners = 1) => {
+            const totalFlowRate = flowRate * burners;
+            const heatInput = totalFlowRate * cv;
+            const effectiveHeat = heatInput * BOILER_EFFICIENCY;
+            const steamKgPerHr = effectiveHeat / STEAM_ENTHALPY;
+            return steamKgPerHr / 1000;
+          };
+          
+          const generateCVData = () => {
+            const data = [];
+            for (let cv = 720; cv <= 760; cv += 2) {
+              const steamRate = calculateSteamRate(selectedFlow, cv, numBurners);
+              data.push({
+                cv: cv,
+                steamRate: steamRate.toFixed(2),
+                flowRate: selectedFlow
+              });
+            }
+            return data;
+          };
+          
+          const generateFlowData = () => {
+            const data = [];
+            for (let flow = 22000; flow <= 26000; flow += 200) {
+              const steamRate = calculateSteamRate(flow, selectedCV, numBurners);
+              data.push({
+                flowRate: flow,
+                steamRate: steamRate.toFixed(2),
+                cv: selectedCV
+              });
+            }
+            return data;
+          };
+          
+          const generateContourData = () => {
+            const data = [];
+            const cvRange = [720, 730, 740, 750, 760];
+            
+            for (let flow = 22000; flow <= 26000; flow += 500) {
+              const point = { flowRate: flow };
+              cvRange.forEach(cv => {
+                point[`cv${cv}`] = calculateSteamRate(flow, cv, numBurners).toFixed(2);
+              });
+              data.push(point);
+            }
+            return data;
+          };
+          
+          const cvData = generateCVData();
+          const flowData = generateFlowData();
+          const contourData = generateContourData();
+          
+          const currentSteam = calculateSteamRate(selectedFlow, selectedCV, numBurners);
+          const steamAfterDrop = calculateSteamRate(selectedFlow, selectedCV - 1, numBurners);
+          const deltaSteam = currentSteam - steamAfterDrop;
+          
+          const CustomTooltip = ({ active, payload, label }) => {
+            if (active && payload && payload.length) {
+              return (
+                <div className="bg-white p-3 border border-gray-300 rounded shadow-lg">
+                  <p className="font-semibold">{`${payload[0].name}: ${label}`}</p>
+                  <p className="text-blue-600">{`Steam: ${payload[0].value} TPH`}</p>
+                </div>
+              );
+            }
+            return null;
+          };
+
+          return (
+            <div className="w-full h-full bg-gradient-to-br from-slate-50 to-blue-50 p-6 overflow-auto">
+              <div className="max-w-7xl mx-auto">
+                <h1 className="text-3xl font-bold text-slate-800 mb-2">
+                  Blast Furnace Gas Steam Generation Nomograph
+                </h1>
+                <p className="text-slate-600 mb-6">
+                  Visualize the impact of fuel CV and flow rate on steam generation
+                </p>
+                
+                <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">
+                        Flow Rate per Burner: {selectedFlow.toLocaleString()} Nm³/hr
+                      </label>
+                      <input
+                        type="range"
+                        min="22000"
+                        max="26000"
+                        step="100"
+                        value={selectedFlow}
+                        onChange={(e) => setSelectedFlow(Number(e.target.value))}
+                        className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer"
+                      />
+                      <div className="flex justify-between text-xs text-slate-500 mt-1">
+                        <span>22,000</span>
+                        <span>26,000</span>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">
+                        Calorific Value: {selectedCV} kCal/Nm³
+                      </label>
+                      <input
+                        type="range"
+                        min="720"
+                        max="760"
+                        step="1"
+                        value={selectedCV}
+                        onChange={(e) => setSelectedCV(Number(e.target.value))}
+                        className="w-full h-2 bg-green-200 rounded-lg appearance-none cursor-pointer"
+                      />
+                      <div className="flex justify-between text-xs text-slate-500 mt-1">
+                        <span>720</span>
+                        <span>760</span>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">
+                        Number of Burners: {numBurners}
+                      </label>
+                      <input
+                        type="range"
+                        min="1"
+                        max="8"
+                        step="1"
+                        value={numBurners}
+                        onChange={(e) => setNumBurners(Number(e.target.value))}
+                        className="w-full h-2 bg-orange-200 rounded-lg appearance-none cursor-pointer"
+                      />
+                      <div className="flex justify-between text-xs text-slate-500 mt-1">
+                        <span>1</span>
+                        <span>8</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                    <p className="text-sm text-slate-600">
+                      <span className="font-semibold">Total Fuel Flow:</span> {(selectedFlow * numBurners).toLocaleString()} Nm³/hr 
+                      <span className="ml-4 text-slate-500">({numBurners} burner{numBurners > 1 ? 's' : ''} × {selectedFlow.toLocaleString()} Nm³/hr)</span>
+                    </p>
+                  </div>
+                  
+                  <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg border border-blue-200">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="text-center">
+                        <p className="text-sm text-slate-600 font-medium">Current Steam Generation</p>
+                        <p className="text-2xl font-bold text-blue-600">
+                          {currentSteam.toFixed(2)} TPH
+                        </p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm text-slate-600 font-medium">After 1 kCal/Nm³ Drop</p>
+                        <p className="text-2xl font-bold text-orange-600">
+                          {steamAfterDrop.toFixed(2)} TPH
+                        </p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm text-slate-600 font-medium">Steam Loss (Δ)</p>
+                        <p className="text-2xl font-bold text-red-600">
+                          -{deltaSteam.toFixed(3)} TPH
+                        </p>
+                        <p className="text-xs text-slate-500 mt-1">
+                          ({((deltaSteam/currentSteam)*100).toFixed(2)}% reduction)
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+                  <h2 className="text-xl font-semibold text-slate-800 mb-4">
+                    Steam Generation Contours
+                  </h2>
+                  <ResponsiveContainer width="100%" height={400}>
+                    <LineChart data={contourData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                      <XAxis 
+                        dataKey="flowRate" 
+                        label={{ value: 'Fuel Flow Rate (Nm³/hr)', position: 'insideBottom', offset: -5 }}
+                        tickFormatter={(value) => value.toLocaleString()}
+                      />
+                      <YAxis 
+                        label={{ value: 'Steam Generation (TPH)', angle: -90, position: 'insideLeft' }}
+                        tickFormatter={(value) => value.toLocaleString()}
+                      />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Legend />
+                      <Line type="monotone" dataKey="cv720" stroke="#1e40af" name="CV: 720 kCal/Nm³" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="cv730" stroke="#3b82f6" name="CV: 730 kCal/Nm³" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="cv740" stroke="#10b981" name="CV: 740 kCal/Nm³" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="cv750" stroke="#f59e0b" name="CV: 750 kCal/Nm³" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="cv760" stroke="#ef4444" name="CV: 760 kCal/Nm³" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="bg-white rounded-lg shadow-lg p-6">
+                    <h2 className="text-xl font-semibold text-slate-800 mb-4">
+                      Impact of CV Change
+                    </h2>
+                    <p className="text-sm text-slate-600 mb-3">
+                      Flow: {selectedFlow.toLocaleString()} Nm³/hr/burner × {numBurners} burner{numBurners > 1 ? 's' : ''} = {(selectedFlow * numBurners).toLocaleString()} Nm³/hr total
+                    </p>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <LineChart data={cvData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                        <XAxis 
+                          dataKey="cv" 
+                          label={{ value: 'Calorific Value (kCal/Nm³)', position: 'insideBottom', offset: -5 }}
+                        />
+                        <YAxis 
+                          label={{ value: 'Steam (TPH)', angle: -90, position: 'insideLeft' }}
+                          tickFormatter={(value) => value.toLocaleString()}
+                        />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Line 
+                          type="monotone" 
+                          dataKey="steamRate" 
+                          stroke="#3b82f6" 
+                          strokeWidth={3}
+                          dot={{ fill: '#3b82f6', r: 4 }}
+                          name="Steam Rate"
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                  
+                  <div className="bg-white rounded-lg shadow-lg p-6">
+                    <h2 className="text-xl font-semibold text-slate-800 mb-4">
+                      Impact of Flow Rate per Burner
+                    </h2>
+                    <p className="text-sm text-slate-600 mb-3">
+                      CV: {selectedCV} kCal/Nm³ with {numBurners} burner{numBurners > 1 ? 's' : ''} in service
+                    </p>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <LineChart data={flowData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                        <XAxis 
+                          dataKey="flowRate" 
+                          label={{ value: 'Flow Rate per Burner (Nm³/hr)', position: 'insideBottom', offset: -5 }}
+                          tickFormatter={(value) => value.toLocaleString()}
+                        />
+                        <YAxis 
+                          label={{ value: 'Steam (TPH)', angle: -90, position: 'insideLeft' }}
+                          tickFormatter={(value) => value.toLocaleString()}
+                        />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Line 
+                          type="monotone" 
+                          dataKey="steamRate" 
+                          stroke="#10b981" 
+                          strokeWidth={3}
+                          dot={{ fill: '#10b981', r: 4 }}
+                          name="Steam Rate"
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+                
+                <div className="bg-white rounded-lg shadow-lg p-6 mt-6">
+                  <h2 className="text-xl font-semibold text-slate-800 mb-4">
+                    Quick Reference: Steam Loss per 1 kCal/Nm³ CV Drop (with {numBurners} burner{numBurners > 1 ? 's' : ''})
+                  </h2>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-slate-100">
+                        <tr>
+                          <th className="p-3 text-left font-semibold">Flow/Burner (Nm³/hr)</th>
+                          <th className="p-3 text-center font-semibold">Total Flow (Nm³/hr)</th>
+                          <th className="p-3 text-center font-semibold">CV 760→759</th>
+                          <th className="p-3 text-center font-semibold">CV 750→749</th>
+                          <th className="p-3 text-center font-semibold">CV 740→739</th>
+                          <th className="p-3 text-center font-semibold">CV 730→729</th>
+                          <th className="p-3 text-center font-semibold">CV 720→719</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[22000, 23000, 24000, 25000, 26000].map(flow => (
+                          <tr key={flow} className="border-b hover:bg-slate-50">
+                            <td className="p-3 font-medium">{flow.toLocaleString()}</td>
+                            <td className="p-3 text-center text-slate-600">{(flow * numBurners).toLocaleString()}</td>
+                            {[760, 750, 740, 730, 720].map(cv => {
+                              const loss = calculateSteamRate(flow, cv, numBurners) - calculateSteamRate(flow, cv - 1, numBurners);
+                              return (
+                                <td key={cv} className="p-3 text-center text-red-600 font-medium">
+                                  -{loss.toFixed(3)} TPH
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
+                  <h3 className="font-semibold text-slate-800 mb-2">Assumptions:</h3>
+                  <ul className="text-sm text-slate-600 space-y-1">
+                    <li>• Boiler efficiency: {(BOILER_EFFICIENCY * 100)}%</li>
+                    <li>• Steam enthalpy: {STEAM_ENTHALPY} kCal/kg (saturated steam ~10 bar)</li>
+                    <li>• Calculation: Steam Rate (TPH) = [(Flow per Burner × No. of Burners × CV × Efficiency) / Steam Enthalpy] / 1000</li>
+                    <li>• Flow rate range per burner: 22,000 to 26,000 Nm³/hr</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        ReactDOM.render(<BFGNomograph />, document.getElementById('root'));
+    </script>
+</body>
+</html>
