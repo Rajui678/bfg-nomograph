@@ -8,7 +8,77 @@
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://unpkg.com/recharts@2.5.0/dist/Recharts.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; }
+        
+        .container { width: 100%; min-height: 100vh; background: linear-gradient(to bottom right, #f8fafc, #dbeafe); padding: 1.5rem; overflow: auto; }
+        .max-w-7xl { max-width: 80rem; margin: 0 auto; }
+        
+        .title { font-size: 1.875rem; font-weight: bold; color: #1e293b; margin-bottom: 0.5rem; }
+        .subtitle { color: #64748b; margin-bottom: 1.5rem; }
+        
+        .card { background: white; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); padding: 1.5rem; margin-bottom: 1.5rem; }
+        
+        .grid { display: grid; gap: 1.5rem; }
+        .grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
+        .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+        
+        @media (max-width: 768px) {
+            .grid-cols-3, .grid-cols-2 { grid-template-columns: 1fr; }
+        }
+        
+        .label { display: block; font-size: 0.875rem; font-weight: 600; color: #334155; margin-bottom: 0.5rem; }
+        
+        .slider { width: 100%; height: 0.5rem; border-radius: 0.5rem; appearance: none; cursor: pointer; outline: none; }
+        .slider::-webkit-slider-thumb { appearance: none; width: 1.25rem; height: 1.25rem; border-radius: 50%; background: #3b82f6; cursor: pointer; }
+        .slider::-moz-range-thumb { width: 1.25rem; height: 1.25rem; border-radius: 50%; background: #3b82f6; cursor: pointer; border: none; }
+        
+        .slider-blue { background: #bfdbfe; }
+        .slider-green { background: #86efac; }
+        .slider-orange { background: #fed7aa; }
+        
+        .slider-labels { display: flex; justify-content: space-between; font-size: 0.75rem; color: #64748b; margin-top: 0.25rem; }
+        
+        .info-box { padding: 0.75rem; background: #f1f5f9; border-radius: 0.5rem; border: 1px solid #cbd5e1; margin-top: 1rem; }
+        .info-text { font-size: 0.875rem; color: #475569; }
+        .info-bold { font-weight: 600; }
+        
+        .results-box { margin-top: 1.5rem; padding: 1rem; background: linear-gradient(to right, #eff6ff, #f0fdf4); border-radius: 0.5rem; border: 1px solid #93c5fd; }
+        .results-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+        
+        @media (max-width: 768px) {
+            .results-grid { grid-template-columns: 1fr; }
+        }
+        
+        .result-item { text-align: center; }
+        .result-label { font-size: 0.875rem; color: #475569; font-weight: 500; }
+        .result-value { font-size: 1.5rem; font-weight: bold; margin-top: 0.25rem; }
+        .result-value-blue { color: #2563eb; }
+        .result-value-orange { color: #ea580c; }
+        .result-value-red { color: #dc2626; }
+        .result-note { font-size: 0.75rem; color: #64748b; margin-top: 0.25rem; }
+        
+        .section-title { font-size: 1.25rem; font-weight: 600; color: #1e293b; margin-bottom: 1rem; }
+        .section-subtitle { font-size: 0.875rem; color: #475569; margin-bottom: 0.75rem; }
+        
+        table { width: 100%; font-size: 0.875rem; border-collapse: collapse; }
+        thead { background: #f1f5f9; }
+        th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #e2e8f0; }
+        th { font-weight: 600; }
+        td { color: #334155; }
+        .text-center { text-align: center; }
+        .text-red { color: #dc2626; font-weight: 500; }
+        .text-gray { color: #64748b; }
+        tbody tr:hover { background: #f8fafc; }
+        
+        .assumptions-box { background: #eff6ff; border: 1px solid #93c5fd; border-radius: 0.5rem; padding: 1rem; margin-top: 1.5rem; }
+        .assumptions-title { font-weight: 600; color: #1e293b; margin-bottom: 0.5rem; }
+        .assumptions-list { list-style: none; font-size: 0.875rem; color: #475569; }
+        .assumptions-list li { margin: 0.25rem 0; }
+        
+        .overflow-auto { overflow-x: auto; }
+    </style>
 </head>
 <body>
     <div id="root"></div>
@@ -39,7 +109,7 @@
               const steamRate = calculateSteamRate(selectedFlow, cv, numBurners);
               data.push({
                 cv: cv,
-                steamRate: steamRate.toFixed(2),
+                steamRate: parseFloat(steamRate.toFixed(2)),
                 flowRate: selectedFlow
               });
             }
@@ -52,7 +122,7 @@
               const steamRate = calculateSteamRate(flow, selectedCV, numBurners);
               data.push({
                 flowRate: flow,
-                steamRate: steamRate.toFixed(2),
+                steamRate: parseFloat(steamRate.toFixed(2)),
                 cv: selectedCV
               });
             }
@@ -66,7 +136,7 @@
             for (let flow = 22000; flow <= 26000; flow += 500) {
               const point = { flowRate: flow };
               cvRange.forEach(cv => {
-                point[`cv${cv}`] = calculateSteamRate(flow, cv, numBurners).toFixed(2);
+                point[`cv${cv}`] = parseFloat(calculateSteamRate(flow, cv, numBurners).toFixed(2));
               });
               data.push(point);
             }
@@ -84,9 +154,9 @@
           const CustomTooltip = ({ active, payload, label }) => {
             if (active && payload && payload.length) {
               return (
-                <div className="bg-white p-3 border border-gray-300 rounded shadow-lg">
-                  <p className="font-semibold">{`${payload[0].name}: ${label}`}</p>
-                  <p className="text-blue-600">{`Steam: ${payload[0].value} TPH`}</p>
+                <div style={{background: 'white', padding: '12px', border: '1px solid #d1d5db', borderRadius: '4px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)'}}>
+                  <p style={{fontWeight: 600, marginBottom: '4px'}}>{`${payload[0].name}: ${label}`}</p>
+                  <p style={{color: '#2563eb'}}>{`Steam: ${payload[0].value} TPH`}</p>
                 </div>
               );
             }
@@ -94,19 +164,15 @@
           };
 
           return (
-            <div className="w-full h-full bg-gradient-to-br from-slate-50 to-blue-50 p-6 overflow-auto">
-              <div className="max-w-7xl mx-auto">
-                <h1 className="text-3xl font-bold text-slate-800 mb-2">
-                  Blast Furnace Gas Steam Generation Nomograph
-                </h1>
-                <p className="text-slate-600 mb-6">
-                  Visualize the impact of fuel CV and flow rate on steam generation
-                </p>
+            <div className="container">
+              <div className="max-w-7xl">
+                <h1 className="title">Blast Furnace Gas Steam Generation Nomograph</h1>
+                <p className="subtitle">Visualize the impact of fuel CV and flow rate on steam generation</p>
                 
-                <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="card">
+                  <div className="grid grid-cols-3">
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">
+                      <label className="label">
                         Flow Rate per Burner: {selectedFlow.toLocaleString()} Nm³/hr
                       </label>
                       <input
@@ -116,16 +182,16 @@
                         step="100"
                         value={selectedFlow}
                         onChange={(e) => setSelectedFlow(Number(e.target.value))}
-                        className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer"
+                        className="slider slider-blue"
                       />
-                      <div className="flex justify-between text-xs text-slate-500 mt-1">
+                      <div className="slider-labels">
                         <span>22,000</span>
                         <span>26,000</span>
                       </div>
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">
+                      <label className="label">
                         Calorific Value: {selectedCV} kCal/Nm³
                       </label>
                       <input
@@ -135,16 +201,16 @@
                         step="1"
                         value={selectedCV}
                         onChange={(e) => setSelectedCV(Number(e.target.value))}
-                        className="w-full h-2 bg-green-200 rounded-lg appearance-none cursor-pointer"
+                        className="slider slider-green"
                       />
-                      <div className="flex justify-between text-xs text-slate-500 mt-1">
+                      <div className="slider-labels">
                         <span>720</span>
                         <span>760</span>
                       </div>
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">
+                      <label className="label">
                         Number of Burners: {numBurners}
                       </label>
                       <input
@@ -154,42 +220,42 @@
                         step="1"
                         value={numBurners}
                         onChange={(e) => setNumBurners(Number(e.target.value))}
-                        className="w-full h-2 bg-orange-200 rounded-lg appearance-none cursor-pointer"
+                        className="slider slider-orange"
                       />
-                      <div className="flex justify-between text-xs text-slate-500 mt-1">
+                      <div className="slider-labels">
                         <span>1</span>
                         <span>8</span>
                       </div>
                     </div>
                   </div>
                   
-                  <div className="mt-4 p-3 bg-slate-50 rounded-lg border border-slate-200">
-                    <p className="text-sm text-slate-600">
-                      <span className="font-semibold">Total Fuel Flow:</span> {(selectedFlow * numBurners).toLocaleString()} Nm³/hr 
-                      <span className="ml-4 text-slate-500">({numBurners} burner{numBurners > 1 ? 's' : ''} × {selectedFlow.toLocaleString()} Nm³/hr)</span>
+                  <div className="info-box">
+                    <p className="info-text">
+                      <span className="info-bold">Total Fuel Flow:</span> {(selectedFlow * numBurners).toLocaleString()} Nm³/hr 
+                      <span style={{marginLeft: '1rem', color: '#64748b'}}>({numBurners} burner{numBurners > 1 ? 's' : ''} × {selectedFlow.toLocaleString()} Nm³/hr)</span>
                     </p>
                   </div>
                   
-                  <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg border border-blue-200">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="text-center">
-                        <p className="text-sm text-slate-600 font-medium">Current Steam Generation</p>
-                        <p className="text-2xl font-bold text-blue-600">
+                  <div className="results-box">
+                    <div className="results-grid">
+                      <div className="result-item">
+                        <p className="result-label">Current Steam Generation</p>
+                        <p className="result-value result-value-blue">
                           {currentSteam.toFixed(2)} TPH
                         </p>
                       </div>
-                      <div className="text-center">
-                        <p className="text-sm text-slate-600 font-medium">After 1 kCal/Nm³ Drop</p>
-                        <p className="text-2xl font-bold text-orange-600">
+                      <div className="result-item">
+                        <p className="result-label">After 1 kCal/Nm³ Drop</p>
+                        <p className="result-value result-value-orange">
                           {steamAfterDrop.toFixed(2)} TPH
                         </p>
                       </div>
-                      <div className="text-center">
-                        <p className="text-sm text-slate-600 font-medium">Steam Loss (Δ)</p>
-                        <p className="text-2xl font-bold text-red-600">
+                      <div className="result-item">
+                        <p className="result-label">Steam Loss (Δ)</p>
+                        <p className="result-value result-value-red">
                           -{deltaSteam.toFixed(3)} TPH
                         </p>
-                        <p className="text-xs text-slate-500 mt-1">
+                        <p className="result-note">
                           ({((deltaSteam/currentSteam)*100).toFixed(2)}% reduction)
                         </p>
                       </div>
@@ -197,21 +263,18 @@
                   </div>
                 </div>
                 
-                <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-                  <h2 className="text-xl font-semibold text-slate-800 mb-4">
-                    Steam Generation Contours
-                  </h2>
+                <div className="card">
+                  <h2 className="section-title">Steam Generation Contours</h2>
                   <ResponsiveContainer width="100%" height={400}>
                     <LineChart data={contourData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                       <XAxis 
                         dataKey="flowRate" 
-                        label={{ value: 'Fuel Flow Rate (Nm³/hr)', position: 'insideBottom', offset: -5 }}
+                        label={{ value: 'Fuel Flow Rate per Burner (Nm³/hr)', position: 'insideBottom', offset: -5 }}
                         tickFormatter={(value) => value.toLocaleString()}
                       />
                       <YAxis 
                         label={{ value: 'Steam Generation (TPH)', angle: -90, position: 'insideLeft' }}
-                        tickFormatter={(value) => value.toLocaleString()}
                       />
                       <Tooltip content={<CustomTooltip />} />
                       <Legend />
@@ -224,12 +287,10 @@
                   </ResponsiveContainer>
                 </div>
                 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <div className="bg-white rounded-lg shadow-lg p-6">
-                    <h2 className="text-xl font-semibold text-slate-800 mb-4">
-                      Impact of CV Change
-                    </h2>
-                    <p className="text-sm text-slate-600 mb-3">
+                <div className="grid grid-cols-2">
+                  <div className="card">
+                    <h2 className="section-title">Impact of CV Change</h2>
+                    <p className="section-subtitle">
                       Flow: {selectedFlow.toLocaleString()} Nm³/hr/burner × {numBurners} burner{numBurners > 1 ? 's' : ''} = {(selectedFlow * numBurners).toLocaleString()} Nm³/hr total
                     </p>
                     <ResponsiveContainer width="100%" height={300}>
@@ -241,7 +302,6 @@
                         />
                         <YAxis 
                           label={{ value: 'Steam (TPH)', angle: -90, position: 'insideLeft' }}
-                          tickFormatter={(value) => value.toLocaleString()}
                         />
                         <Tooltip content={<CustomTooltip />} />
                         <Line 
@@ -256,11 +316,9 @@
                     </ResponsiveContainer>
                   </div>
                   
-                  <div className="bg-white rounded-lg shadow-lg p-6">
-                    <h2 className="text-xl font-semibold text-slate-800 mb-4">
-                      Impact of Flow Rate per Burner
-                    </h2>
-                    <p className="text-sm text-slate-600 mb-3">
+                  <div className="card">
+                    <h2 className="section-title">Impact of Flow Rate per Burner</h2>
+                    <p className="section-subtitle">
                       CV: {selectedCV} kCal/Nm³ with {numBurners} burner{numBurners > 1 ? 's' : ''} in service
                     </p>
                     <ResponsiveContainer width="100%" height={300}>
@@ -273,7 +331,6 @@
                         />
                         <YAxis 
                           label={{ value: 'Steam (TPH)', angle: -90, position: 'insideLeft' }}
-                          tickFormatter={(value) => value.toLocaleString()}
                         />
                         <Tooltip content={<CustomTooltip />} />
                         <Line 
@@ -289,32 +346,32 @@
                   </div>
                 </div>
                 
-                <div className="bg-white rounded-lg shadow-lg p-6 mt-6">
-                  <h2 className="text-xl font-semibold text-slate-800 mb-4">
+                <div className="card">
+                  <h2 className="section-title">
                     Quick Reference: Steam Loss per 1 kCal/Nm³ CV Drop (with {numBurners} burner{numBurners > 1 ? 's' : ''})
                   </h2>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead className="bg-slate-100">
+                  <div className="overflow-auto">
+                    <table>
+                      <thead>
                         <tr>
-                          <th className="p-3 text-left font-semibold">Flow/Burner (Nm³/hr)</th>
-                          <th className="p-3 text-center font-semibold">Total Flow (Nm³/hr)</th>
-                          <th className="p-3 text-center font-semibold">CV 760→759</th>
-                          <th className="p-3 text-center font-semibold">CV 750→749</th>
-                          <th className="p-3 text-center font-semibold">CV 740→739</th>
-                          <th className="p-3 text-center font-semibold">CV 730→729</th>
-                          <th className="p-3 text-center font-semibold">CV 720→719</th>
+                          <th>Flow/Burner (Nm³/hr)</th>
+                          <th className="text-center">Total Flow (Nm³/hr)</th>
+                          <th className="text-center">CV 760→759</th>
+                          <th className="text-center">CV 750→749</th>
+                          <th className="text-center">CV 740→739</th>
+                          <th className="text-center">CV 730→729</th>
+                          <th className="text-center">CV 720→719</th>
                         </tr>
                       </thead>
                       <tbody>
                         {[22000, 23000, 24000, 25000, 26000].map(flow => (
-                          <tr key={flow} className="border-b hover:bg-slate-50">
-                            <td className="p-3 font-medium">{flow.toLocaleString()}</td>
-                            <td className="p-3 text-center text-slate-600">{(flow * numBurners).toLocaleString()}</td>
+                          <tr key={flow}>
+                            <td style={{fontWeight: 500}}>{flow.toLocaleString()}</td>
+                            <td className="text-center text-gray">{(flow * numBurners).toLocaleString()}</td>
                             {[760, 750, 740, 730, 720].map(cv => {
                               const loss = calculateSteamRate(flow, cv, numBurners) - calculateSteamRate(flow, cv - 1, numBurners);
                               return (
-                                <td key={cv} className="p-3 text-center text-red-600 font-medium">
+                                <td key={cv} className="text-center text-red">
                                   -{loss.toFixed(3)} TPH
                                 </td>
                               );
@@ -326,9 +383,9 @@
                   </div>
                 </div>
                 
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
-                  <h3 className="font-semibold text-slate-800 mb-2">Assumptions:</h3>
-                  <ul className="text-sm text-slate-600 space-y-1">
+                <div className="assumptions-box">
+                  <h3 className="assumptions-title">Assumptions:</h3>
+                  <ul className="assumptions-list">
                     <li>• Boiler efficiency: {(BOILER_EFFICIENCY * 100)}%</li>
                     <li>• Steam enthalpy: {STEAM_ENTHALPY} kCal/kg (saturated steam ~10 bar)</li>
                     <li>• Calculation: Steam Rate (TPH) = [(Flow per Burner × No. of Burners × CV × Efficiency) / Steam Enthalpy] / 1000</li>
